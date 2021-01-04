@@ -1,9 +1,9 @@
-"""
-@Author: Eric
-@Date: 2020-07-14 20:39:33
+'''
+Author: Dong
+Date: 2021-01-04 20:21:54
 LastEditors: Dong
-LastEditTime: 2020-12-29 22:19:42
-"""
+LastEditTime: 2021-01-04 22:02:24
+'''
 import re
 import requests
 import time
@@ -19,13 +19,13 @@ class Brand:
 
     def get_page(self, cateId, date, pageRatio):
         print('第' + str(self.page) + '页')
-        self.url = "https://dy.feigua.cn/EShop/FlagShipShopRank?sort=TotalOrderAccount"
+        self.url = "https://dy.feigua.cn/EShop/FlagShipShopRank?sort=TotalOrderAccount&flagShip=1"
         self.headers = {
             "Cookie": self.cookie
         }
 
         self.detailUrl = "https://dy.feigua.cn/EShop/ProductAnalysis?ispartial=true&page=1&sort=0&CateId=0"
-
+        
         res = requests.get(self.url + "&cateid=" + cateId + "&page=" + str(self.page) + "&period=" + date, headers=self.headers)
         s = etree.HTML(res.text)
         prev = '//*[@id="js-promotion-container"]/' if self.page == 1 else '//'

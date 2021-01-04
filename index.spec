@@ -4,7 +4,7 @@ block_cipher = None
 
 
 a = Analysis(['index.py'],
-             pathex=['E:\\myself\\python_study'],
+             pathex=['/Users/dwp/github/python_sl'],
              binaries=[],
              datas=[],
              hiddenimports=[],
@@ -30,4 +30,8 @@ exe = EXE(pyz,
           upx=True,
           upx_exclude=[],
           runtime_tmpdir=None,
-          console=False , icon='close.ico')
+          console=False )
+app = BUNDLE(exe,
+             name='index.app',
+             icon=None,
+             bundle_identifier=None)
