@@ -1,0 +1,16 @@
+<RCC>
+    <qresource prefix="/">
+        <file>brand.svg</file>    
+        <file>close.ico</file>    
+        <file>live.svg</file>    
+        <file>minus.ico</file>    
+        <file>ox.ico</file>    
+        <file>settings.ico</file>    
+        <file>1.png</file>    
+        <file>2.png</file>    
+        <file>3.png</file>    
+        <file>4.png</file>    
+        <file>5.png</file>    
+        <file>6.png</file>    
+    </qresource>
+</RCC>
