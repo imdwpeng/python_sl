@@ -49,9 +49,7 @@ class Brand:
                     'https://haohuo.jinritemai.com/views/shop/index?id=' + shopId
                 ]
                 self.addRow(info + products)
-                self.step += singleRatio
-                self.setStep()
-                QApplication.processEvents()
+                self.setStep(self.step + singleRatio)
 
             print('=======================================')
             time.sleep(1)

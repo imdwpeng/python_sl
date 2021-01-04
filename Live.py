@@ -25,10 +25,16 @@ class Live:
         }
         res = requests.get(self.searchUrl + "?keyword=" + keyword + "&period=" + date, headers=self.headers)
         s = etree.HTML(res.text)
-        self.name = s.xpath('//*[@id="js-qc-blogger-container"]/div[1]/div/div/div[1]/text()')[0].strip()
-        detailUrl = 'https://dy.feigua.cn' + s.xpath('//*[@id="js-qc-blogger-container"]/div[1]/a/@href')[0][1:]
-        self.uid = self.get_uid(detailUrl)
-        self.get_all_session(totalRatio)
+        print(self.searchUrl + "?keyword=" + keyword + "&period=" + date)
+        print(res.text)
+        self.name = s.xpath('//*[@id="js-qc-blogger-container"]/div[1]/div/div/div[1]/text()')[0].strip() if s.xpath('//*[@id="js-qc-blogger-container"]/div') else ''
+        detailUrl = s.xpath('//*[@id="js-qc-blogger-container"]/div[1]/a')
+        if self.name and detailUrl:
+            detailUrl = 'https://dy.feigua.cn' + s.xpath('//*[@id="js-qc-blogger-container"]/div[1]/a/@href')[0][1:]
+            self.uid = self.get_uid(detailUrl)
+            self.get_all_session(totalRatio)
+        else:
+            print(keyword + ' 无此播主')
 
     def get_uid(self, url):
         res = requests.get(url, headers=self.headers)
@@ -127,10 +133,8 @@ class Live:
                         saleVolumn
                     ]
                     self.addRow(info)
-                    self.step += self.singleRatio
-                    self.setStep()
+                    self.setStep(self.step + self.singleRatio)
 
-                    QApplication.processEvents()
                     hasData = True
         return hasData
 

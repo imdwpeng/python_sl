@@ -28,6 +28,7 @@ class Table():
         else:
             print('没有需要添加的数据')
         self.table_main.scrollToBottom()
+        QApplication.processEvents()
 
     # 导出为excel
     def download(self):

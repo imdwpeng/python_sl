@@ -1,5 +1,6 @@
 import sys
 import os
+import time
 import random
 from PyQt5.Qt import *
 from PyQt5.QtWidgets import *
@@ -491,32 +492,43 @@ class MainUi(QMainWindow, Table, Live, Brand):
         elif self.activeTab == '品牌旗舰店' and len(checkboxList) == 0:
             return QMessageBox.information(self, '提示', '请选择小店类型', QMessageBox.Close)
 
-        # 显示进度条
+        # 初始化数据
+        self.table_main.setRowCount(0)
+        self.down_btn.setVisible(False)
         self.right_process_bar.setVisible(True)
+        self.step = 0
+        self.right_process_bar.setValue(0)
+        QApplication.processEvents()
 
         # 直播数据
         if self.activeTab == '直播红人' and len(keywordAttr):
             ratio = 100 / float(len(keywordAttr))
             for i in range(len(keywordAttr)):
                 self.get_search_live(keywordAttr[i], date, ratio)
-                self.step = ratio * (i + 1)
-                self.setStep()
+                self.setStep(ratio * (i + 1))
         elif self.activeTab == '品牌旗舰店' and len(checkboxList):
             ratio = 100 / float(len(checkboxList))
             for i in range(len(checkboxList)):
                 self.get_search_brand(checkboxList[i], date, ratio)
-                self.step = ratio * (i + 1)
-                self.setStep()
+                self.setStep(ratio * (i + 1))
 
         # 显示下载按钮
-        self.down_btn.setVisible(True)
+        if self.table_main.rowCount():
+            self.down_btn.setVisible(True)
+
         # 重置进度条
         self.right_process_bar.setVisible(False)
         self.step = 0
 
     # 更新进度条
-    def setStep(self):
-        self.right_process_bar.setValue(self.step)
+    def setStep(self, newStep):
+        if int(self.step) < int(newStep):
+            for iStep in range(int(self.step), int(newStep)):
+                self.step = iStep
+                self.right_process_bar.setValue(self.step)
+                time.sleep(0.1)
+                QApplication.processEvents()
+        self.step = newStep
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
