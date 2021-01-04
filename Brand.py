@@ -14,13 +14,11 @@ from PyQt5.QtWidgets import QApplication
 class Brand:
     def get_search_brand(self, cateId, date, totalRatio):
         pageRatio = totalRatio / float(100)
-        for i in range(1, 100):
-            print('第' + str(i+1) + '页')
-            self.get_page(i, cateId, date, pageRatio)
-            print('=======================================')
-            time.sleep(1)
+        self.page = 1
+        self.get_page(cateId, date, pageRatio)
 
-    def get_page(self, page, cateId, date, pageRatio):
+    def get_page(self, cateId, date, pageRatio):
+        print('第' + str(self.page) + '页')
         self.url = "https://dy.feigua.cn/EShop/FlagShipShopRank?sort=TotalOrderAccount"
         self.headers = {
             "Cookie": self.cookie
@@ -28,9 +26,9 @@ class Brand:
 
         self.detailUrl = "https://dy.feigua.cn/EShop/ProductAnalysis?ispartial=true&page=1&sort=0&CateId=0"
 
-        res = requests.get(self.url + "&cateid=" + cateId + "&page=" + str(page) + "&period=" + date, headers=self.headers)
+        res = requests.get(self.url + "&cateid=" + cateId + "&page=" + str(self.page) + "&period=" + date, headers=self.headers)
         s = etree.HTML(res.text)
-        prev = '//*[@id="js-promotion-container"]/' if page == 1 else '//'
+        prev = '//*[@id="js-promotion-container"]/' if self.page == 1 else '//'
         tr = s.xpath(prev + 'tr')
 
         if len(tr):
@@ -54,8 +52,17 @@ class Brand:
                 self.step += singleRatio
                 self.setStep()
                 QApplication.processEvents()
+
+            print('=======================================')
+            time.sleep(1)
+            if self.page <= 100:
+                self.page += 1
+                self.get_page(cateId, date, pageRatio)
         else:
             print("Error！")
+
+        print('=======================================')
+        time.sleep(1)
 
     def get_top3(self, shopId):
         res = requests.get(self.detailUrl + '&shopId=' + shopId, headers=self.headers)
