@@ -1,4 +1,5 @@
 import sys
+import os
 import time
 import subprocess
 from PyQt5.QtWidgets import *
@@ -19,7 +20,6 @@ class Table():
     # 新增行数据
     def addRow(self, info):
         cur_total_row = self.table_main.rowCount()  # 获取表格总行数
-        print(cur_total_row)
         cur_row = cur_total_row + 1
         self.table_main.setRowCount(cur_row)  # 增加一行
         if len(info):
@@ -49,7 +49,12 @@ class Table():
         filename = './' + self.activeTab + '_' + time.strftime('%Y-%m-%d', time.localtime(time.time())) + '.xlsx'
         wb.save(filename)
         print('保存成功')
+        prev_path = os.getcwd()
 
-        A = QMessageBox.information(self, '提示', '保存至 ' + filename[2:] + ' 中，是否打开？', QMessageBox.Yes | QMessageBox.No)
-        if A == QMessageBox.Yes:
+        # win系统
+        if 'win' in sys.platform:
+            shellArg = '/e,/select,' + prev_path + '\\' + filename[2:]
+            print(shellArg)
+            subprocess.run(['Explorer', shellArg])
+        else:
             subprocess.run(['open', filename], check=True)

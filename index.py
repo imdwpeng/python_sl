@@ -431,7 +431,7 @@ class MainUi(QMainWindow, Table):
         A = QMessageBox.question(self, '提示', '是否确认退出程序？', QMessageBox.Yes | QMessageBox.No)
         if A == QMessageBox.Yes:
             # 退出进程
-            if self.thread.isRunning():
+            if self.thread and self.thread.isRunning and self.thread.isRunning():
                 self.thread.quit()
             self.close()
 
