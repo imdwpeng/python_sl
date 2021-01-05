@@ -42,8 +42,32 @@ checkbox = {
     '美食饮品': '13'
 }
 
+g_cookie = ''
+g_step = 0
 
-class MainUi(QMainWindow, Table, Live, Brand):
+
+class Worker(QThread, Live, Brand):
+    signal = pyqtSignal(list, float)
+
+    def __init__(self, list, date, search_type):
+        super().__init__()
+        self.list = list
+        self.date = date
+        self.type = search_type
+        self.cookie = g_cookie
+
+    def run(self):
+        ratio = 100 / float(len(self.list))
+        for i in range(len(self.list)):
+            if self.type == 'live':
+                self.get_search_live(self.list[i], self.date, ratio)
+            elif self.type == 'brand':
+                self.get_search_brand(self.list[i], self.date, ratio)
+
+            self.signal.emit([], ratio * (i + 1))
+
+
+class MainUi(QMainWindow, Table):
     def __init__(self):
         super().__init__()
 
@@ -106,8 +130,6 @@ class MainUi(QMainWindow, Table, Live, Brand):
         self.init_ui()
 
         # 初始值
-        self.cookie = ''
-        self.step = 0
         self.tableHeader = liveHeader
         self.activeTab = '直播红人'  # 数据类型
         self.tab_live.setChecked(True)  # 默认选中直播
@@ -408,14 +430,18 @@ class MainUi(QMainWindow, Table, Live, Brand):
     def showCloseDialog(self):
         A = QMessageBox.question(self, '提示', '是否确认退出程序？', QMessageBox.Yes | QMessageBox.No)
         if A == QMessageBox.Yes:
+            # 退出进程
+            if self.thread.isRunning():
+                self.thread.quit()
             self.close()
 
     # 显示cookie框
     def showCookieDialog(self):
-        cookie, ok = QInputDialog.getMultiLineText(self, "设置登录信息", "Cookie:", self.cookie)
+        global g_cookie
+        cookie, ok = QInputDialog.getMultiLineText(self, "设置登录信息", "Cookie:", g_cookie)
 
         if ok:
-            self.cookie = cookie
+            g_cookie = cookie
 
     # 切换数据类型
     def changeTab(self):
@@ -431,6 +457,9 @@ class MainUi(QMainWindow, Table, Live, Brand):
         self.check_daily.setVisible(False)
         self.check_makeup.setVisible(False)
         self.check_food.setVisible(False)
+
+        # 隐藏下载按钮
+        self.down_btn.setVisible(False)
 
         # 重置进度条
         self.right_process_bar.setValue(0)
@@ -471,64 +500,96 @@ class MainUi(QMainWindow, Table, Live, Brand):
         daily = checkbox[self.check_daily.text()] if self.check_daily.isChecked() else ''
         food = checkbox[self.check_food.text()] if self.check_food.isChecked() else ''
 
-        keywordAttr = keyword.split('，') if '，' in keyword else keyword.split(',')
-        checkboxList = []
+        keyword_list = keyword.split('，') if '，' in keyword else keyword.split(',')
+        checkbox_list = []
 
         if skincare:
-            checkboxList.append(skincare)
+            checkbox_list.append(skincare)
         if makeup:
-            checkboxList.append(makeup)
+            checkbox_list.append(makeup)
         if daily:
-            checkboxList.append(daily)
+            checkbox_list.append(daily)
         if food:
-            checkboxList.append(food)
+            checkbox_list.append(food)
 
         # 不存在cookie
-        if self.cookie == '':
+        if g_cookie == '':
             return QMessageBox.information(self, '提示', '没有设置登陆信息，请先点击左上角绿色图标设置', QMessageBox.Close)
         # 直播时需要输入关键词
         elif self.activeTab == '直播红人' and keyword == '':
             return QMessageBox.information(self, '提示', '请输入需要搜索的播主', QMessageBox.Close)
-        elif self.activeTab == '品牌旗舰店' and len(checkboxList) == 0:
+        elif self.activeTab == '品牌旗舰店' and len(checkbox_list) == 0:
             return QMessageBox.information(self, '提示', '请选择小店类型', QMessageBox.Close)
 
+        # 开始查询
+        search_type = ''
+        data_list = []
+        global g_step
+        g_step = 0
+        if self.activeTab == '直播红人' and len(keyword_list):
+            search_type = 'live'
+            data_list = keyword_list
+        elif self.activeTab == '品牌旗舰店' and len(checkbox_list):
+            search_type = 'brand'
+            data_list = checkbox_list
+
+        if search_type:
+            self.thread = Worker(data_list, date, search_type)  # 创建线程
+            self.thread.signal.connect(self.update_data)  # 线程连接相关callback事件
+            self.thread.start()  # 启动线程
+
+    # 更新数据
+    def update_data(self, info, new_step):
+        global g_step
         # 初始化数据
-        self.table_main.setRowCount(0)
-        self.down_btn.setVisible(False)
-        self.right_process_bar.setVisible(True)
-        self.step = 0
-        self.right_process_bar.setValue(0)
-        QApplication.processEvents()
+        if g_step < 100 and not self.right_process_bar.isVisible():
+            self.table_main.setRowCount(0)
+            self.down_btn.setVisible(False)
+            self.right_process_bar.setVisible(True)
+            self.right_process_bar.setValue(0)
 
-        # 直播数据
-        if self.activeTab == '直播红人' and len(keywordAttr):
-            ratio = 100 / float(len(keywordAttr))
-            for i in range(len(keywordAttr)):
-                self.get_search_live(keywordAttr[i], date, ratio)
-                self.setStep(ratio * (i + 1))
-        elif self.activeTab == '品牌旗舰店' and len(checkboxList):
-            ratio = 100 / float(len(checkboxList))
-            for i in range(len(checkboxList)):
-                self.get_search_brand(checkboxList[i], date, ratio)
-                self.setStep(ratio * (i + 1))
+            # 置灰按钮
+            self.tab_live.setEnabled(False)
+            self.tab_brand.setEnabled(False)
+            self.search_btn.setEnabled(False)
 
-        # 显示下载按钮
-        if self.table_main.rowCount():
-            self.down_btn.setVisible(True)
+        step = new_step
+        if len(info):
+            # 新增表格数据
+            self.addRow(info)
+        else:
+            # 没有info时，new_step传的是最终的进度，不是step单元，用于校正进度
+            g_step = new_step
+            step = 0
 
-        # 重置进度条
-        self.right_process_bar.setVisible(False)
-        self.step = 0
+        # 更新进度条
+        self.set_step(step)
+
+        # 查询完成
+        if g_step >= 100:
+            # 如果有数据的话，显示下载按钮
+            if self.table_main.rowCount():
+                self.down_btn.setVisible(True)
+
+            # 重置进度条
+            self.right_process_bar.setVisible(False)
+            self.right_process_bar.setValue(0)
+
+            # 恢复按钮
+            self.tab_live.setEnabled(True)
+            self.tab_brand.setEnabled(True)
+            self.search_btn.setEnabled(True)
 
     # 更新进度条
-    def setStep(self, newStep):
-        if int(self.step) < int(newStep):
-            for iStep in range(int(self.step), int(newStep)):
-                self.step = iStep
-                self.right_process_bar.setValue(self.step)
+    def set_step(self, step):
+        global g_step
+        new_step = g_step + step
+        if int(g_step) < int(new_step):
+            for iStep in range(int(g_step), int(new_step)):
+                g_step += 1
+                self.right_process_bar.setValue(g_step)
                 time.sleep(0.1)
-                QApplication.processEvents()
-        self.step = newStep
+        g_step = new_step
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:

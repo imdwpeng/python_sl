@@ -6,7 +6,6 @@ LastEditTime: 2020-12-29 22:09:48
 '''
 import re
 import requests
-from PyQt5.QtWidgets import QApplication
 from lxml import etree
 from fake_useragent import UserAgent
 
@@ -25,8 +24,6 @@ class Live:
         }
         res = requests.get(self.searchUrl + "?keyword=" + keyword + "&period=" + date, headers=self.headers)
         s = etree.HTML(res.text)
-        print(self.searchUrl + "?keyword=" + keyword + "&period=" + date)
-        print(res.text)
         self.name = s.xpath('//*[@id="js-qc-blogger-container"]/div[1]/div/div/div[1]/text()')[0].strip() if s.xpath('//*[@id="js-qc-blogger-container"]/div') else ''
         detailUrl = s.xpath('//*[@id="js-qc-blogger-container"]/div[1]/a')
         if self.name and detailUrl:
@@ -132,8 +129,7 @@ class Live:
                         saleCount,
                         saleVolumn
                     ]
-                    self.addRow(info)
-                    self.setStep(self.step + self.singleRatio)
+                    self.signal.emit(info, self.singleRatio)
 
                     hasData = True
         return hasData

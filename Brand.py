@@ -8,7 +8,6 @@ import re
 import requests
 import time
 from lxml import etree
-from PyQt5.QtWidgets import QApplication
 
 
 class Brand:
@@ -48,11 +47,10 @@ class Brand:
                     ','.join(ype_attr),
                     'https://haohuo.jinritemai.com/views/shop/index?id=' + shopId
                 ]
-                self.addRow(info + products)
-                self.setStep(self.step + singleRatio)
+                self.signal.emit(info + products, singleRatio)
 
             print('=======================================')
-            time.sleep(1)
+            time.sleep(0.1)
             if self.page <= 100:
                 self.page += 1
                 self.get_page(cateId, date, pageRatio)
@@ -60,7 +58,7 @@ class Brand:
             print("Error！")
 
         print('=======================================')
-        time.sleep(1)
+        time.sleep(0.1)
 
     def get_top3(self, shopId):
         res = requests.get(self.detailUrl + '&shopId=' + shopId, headers=self.headers)

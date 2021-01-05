@@ -17,18 +17,17 @@ class Table():
         self.table_layout.addWidget(self.table_main)
 
     # 新增行数据
-    def addRow(self, data):
+    def addRow(self, info):
         cur_total_row = self.table_main.rowCount()  # 获取表格总行数
         print(cur_total_row)
         cur_row = cur_total_row + 1
         self.table_main.setRowCount(cur_row)  # 增加一行
-        if len(data):
-            for i in range(len(data)):
-                self.table_main.setItem(cur_total_row, i, QTableWidgetItem(data[i]))
+        if len(info):
+            for i in range(len(info)):
+                self.table_main.setItem(cur_total_row, i, QTableWidgetItem(info[i]))
         else:
             print('没有需要添加的数据')
         self.table_main.scrollToBottom()
-        QApplication.processEvents()
 
     # 导出为excel
     def download(self):
