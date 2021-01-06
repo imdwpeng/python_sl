@@ -1,3 +1,9 @@
+'''
+Author: Dong
+Date: 2021-01-06 09:03:36
+LastEditors: Dong
+LastEditTime: 2021-01-06 09:20:48
+'''
 import sys
 import os
 import time
@@ -51,10 +57,11 @@ class Table():
         print('保存成功')
         prev_path = os.getcwd()
 
-        # win系统
-        if 'win' in sys.platform:
+        # mac系统
+        if 'darwin' in sys.platform:
+            subprocess.run(['open', filename], check=True)
+        else:
+            # win系统
             shellArg = '/e,/select,' + prev_path + '\\' + filename[2:]
             print(shellArg)
             subprocess.run(['Explorer', shellArg])
-        else:
-            subprocess.run(['open', filename], check=True)

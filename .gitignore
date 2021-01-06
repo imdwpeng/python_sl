@@ -9,3 +9,8 @@ build
 venv
 
 !*.exe
+
+.idea
+
+setup.py
+resource.py

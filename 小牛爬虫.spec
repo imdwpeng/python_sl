@@ -4,7 +4,7 @@ block_cipher = None
 
 
 a = Analysis(['index.py'],
-             pathex=['E:\\myself\\python_sl'],
+             pathex=['/Users/dwp/github/python_sl'],
              binaries=[],
              datas=[],
              hiddenimports=[],
@@ -30,4 +30,8 @@ exe = EXE(pyz,
           upx=True,
           upx_exclude=[],
           runtime_tmpdir=None,
-          console=False , icon='ox.ico')
+          console=False , icon='ox.icns')
+app = BUNDLE(exe,
+             name='小牛爬虫.app',
+             icon='ox.icns',
+             bundle_identifier=None)
