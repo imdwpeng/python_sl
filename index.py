@@ -6,24 +6,25 @@ from PyQt5.Qt import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from TableView import Table
+from Tabs import Tabs
 from Live import Live
 from Brand import Brand
 import resource  # 将图标资源打包进exe中
 
 liveHeader = [
-            '主播名',
-            '直播间名称',
-            '开播时间',
-            '店铺名',
-            '商品',
-            '券后价',
-            '上架时间',
-            '下架时间',
-            '上架销量',
-            '下架销量',
-            '销量(预估)',
-            '销售额(预估)'
-        ]
+    '主播名',
+    '直播间名称',
+    '开播时间',
+    '店铺名',
+    '商品',
+    '券后价',
+    '上架时间',
+    '下架时间',
+    '上架销量',
+    '下架销量',
+    '销量(预估)',
+    '销售额(预估)'
+]
 brandHeader = [
     '店名',
     '类别',
@@ -67,9 +68,11 @@ class Worker(QThread, Live, Brand):
             self.signal.emit([], ratio * (i + 1))
 
 
-class MainUi(QMainWindow, Table):
+class MainUi(QMainWindow, Table, Tabs):
     def __init__(self):
         super().__init__()
+
+        self.tabs = Tabs()
 
         # 绝对路径（针对于打包后相对路径错误）
         self.path = os.path.dirname(os.path.dirname(os.path.realpath(sys.executable)))
@@ -79,7 +82,7 @@ class MainUi(QMainWindow, Table):
         self.left_widget = QWidget()  # 创建左侧部件
         self.left_layout = QVBoxLayout()  # 创建左侧部件的纵向布局
         self.right_widget = QWidget()  # 创建右侧部件
-        self.right_layout = QVBoxLayout()  # 创建右侧部件的网格布局
+        self.right_layout = QVBoxLayout()  # 创建右侧部件的纵向布局
         self.left_bar_widget = QWidget()  # 创建左侧工具栏
         self.left_bar_layout = QHBoxLayout()  # 创建左侧工具栏的横向布局
         self.left_title_widget = QWidget()  # 创建左侧icon栏
@@ -91,9 +94,6 @@ class MainUi(QMainWindow, Table):
         self.left_mini = QToolButton()  # 最小化按钮
         self.icon = QLabel()  # icon
         self.title = QLabel("小牛爬虫")  # 标题
-        self.tab_feigua = QPushButton("飞瓜")
-        self.tabpanel_live = QPushButton("直播红人")
-        self.tabpanel_brand = QPushButton("品牌旗舰店")
         self.right_bar_widget = QWidget()  # 创建搜索栏
         self.right_bar_layout = QGridLayout()  # 创建搜索栏的网格布局
         self.date_label = QLabel('日期范围')  # 日期范围
@@ -101,6 +101,8 @@ class MainUi(QMainWindow, Table):
         self.date_month = QRadioButton('月')
         self.search_label = QLabel('关键词')  # 搜索标题
         self.right_bar_widget_search_input = QLineEdit()  # 搜索框
+        self.brand_label = QLabel('品牌名')  # 品牌名
+        self.right_bar_widget_brand_text = QTextEdit()  # 品牌列表
         self.check_skincare = QCheckBox('护肤', self)  # 护肤
         self.check_makeup = QCheckBox('彩妆', self)  # 彩妆
         self.check_daily = QCheckBox('日用百货', self)  # 日用百货
@@ -118,21 +120,18 @@ class MainUi(QMainWindow, Table):
         self.left_mini.clicked.connect(self.showMinimized)
         # 显示cookie设置框
         self.left_visit.clicked.connect(self.showCookieDialog)
-        # 切换数据类型
-        self.tabpanel_live.clicked[bool].connect(self.changeTab)
-        self.tabpanel_brand.clicked[bool].connect(self.changeTab)
+        
         # 开始搜索
         self.search_btn.clicked.connect(self.searchData)
         # 下载
         self.down_btn.clicked.connect(self.download)
-
+        
+        self.initTabs()
         self.initTable()
         self.init_ui()
 
         # 初始值
         self.tableHeader = liveHeader
-        self.activeTab = '直播红人'  # 数据类型
-        self.tabpanel_live.setChecked(True)  # 默认选中直播
         self.check_skincare.setVisible(False)
         self.check_daily.setVisible(False)
         self.check_makeup.setVisible(False)
@@ -179,30 +178,12 @@ class MainUi(QMainWindow, Table):
         self.left_close.setFixedSize(15, 15)
         self.left_visit.setFixedSize(15, 15)
         self.left_mini.setFixedSize(15, 15)
-        self.tab_feigua.setObjectName('left_label')
-        self.tabpanel_live.setObjectName('left_button')
-        self.tabpanel_brand.setObjectName('left_button')
-        self.tabpanel_live.setCursor(Qt.PointingHandCursor)
-        self.tabpanel_brand.setCursor(Qt.PointingHandCursor)
-        # 让按钮变得只有两种状态：选中/未选中
-        self.tabpanel_live.setCheckable(True)
-        self.tabpanel_brand.setCheckable(True)
-
+        
         # icon标题栏
         self.icon.setFixedWidth(30)
         self.icon.setFixedHeight(30)
         self.icon.setScaledContents(True)
         self.icon.setPixmap(QPixmap(':/ox.ico'))
-
-        # 导航栏
-        liveIcon = QIcon()
-        brandIcon = QIcon()
-        liveIcon.addPixmap(QPixmap(':/live.svg'))
-        brandIcon.addPixmap(QPixmap(':/brand.svg'))
-        self.tabpanel_live.setIcon(liveIcon)
-        self.tabpanel_live.setIconSize(QSize(12, 12))
-        self.tabpanel_brand.setIcon(brandIcon)
-        self.tabpanel_brand.setIconSize(QSize(12, 12))
 
         self.left_bar_widget.setLayout(self.left_bar_layout)
         self.left_title_widget.setLayout(self.left_title_layout)
@@ -215,10 +196,6 @@ class MainUi(QMainWindow, Table):
 
         self.left_title_layout.addWidget(self.icon)
         self.left_title_layout.addWidget(self.title)
-
-        self.left_tab_layout.addWidget(self.tab_feigua, 1, 0, 1, 1)
-        self.left_tab_layout.addWidget(self.tabpanel_live, 2, 0, 1, 1)
-        self.left_tab_layout.addWidget(self.tabpanel_brand, 4, 0, 1, 1)
 
         self.left_layout.addWidget(self.left_bar_widget)
         self.left_layout.addWidget(self.left_title_widget)
@@ -246,7 +223,14 @@ class MainUi(QMainWindow, Table):
         self.check_daily.setChecked(True)
         self.check_food.setChecked(True)
 
+        # 关键词搜索
         self.right_bar_widget_search_input.setPlaceholderText("输入播主，逗号隔开")
+        # 品牌列表
+        self.brand_label.setObjectName('label')
+        self.brand_label.setVisible(False)
+        self.right_bar_widget_brand_text.setVisible(False)
+        self.right_bar_widget_brand_text.setFixedHeight(50)
+        self.right_bar_widget_brand_text.setPlaceholderText("输入品牌名，逗号隔开")
 
         self.right_bar_layout.addWidget(self.date_label, 0, 0, 1, 1)
         self.right_bar_layout.addWidget(self.date_week, 0, 1, 1, 1)
@@ -257,6 +241,9 @@ class MainUi(QMainWindow, Table):
         self.right_bar_layout.addWidget(self.check_makeup, 1, 2, 1, 1)
         self.right_bar_layout.addWidget(self.check_daily, 1, 3, 1, 1)
         self.right_bar_layout.addWidget(self.check_food, 1, 4, 1, 1)
+        self.right_bar_layout.addWidget(self.brand_label, 0, 0, 1, 1)
+        self.right_bar_layout.addWidget(self.right_bar_widget_brand_text, 0, 1, 1, 9)
+
 
         # 操作按钮组
         self.right_btn_widget.setLayout(self.right_btn_layout)
@@ -399,6 +386,16 @@ class MainUi(QMainWindow, Table):
                 outline:none;
             }
         ''')
+        self.right_bar_widget_brand_text.setStyleSheet('''
+            QTextEdit{
+                color:#000;
+                background:#fff;
+                border:1px solid gray;
+                width:300px;
+                border-radius:10px;
+                padding:2px 4px;
+            }
+        ''')
         self.right_btn_widget.setStyleSheet('''
             QPushButton{
                 padding:5px 10px;
@@ -444,19 +441,19 @@ class MainUi(QMainWindow, Table):
             g_cookie = cookie
 
     # 切换数据类型
-    def changeTab(self):
-        source = self.sender()
-        type = source.text()
-        # 初始化按钮状态
-        self.tabpanel_live.setChecked(False)
-        self.tabpanel_brand.setChecked(False)
-
+    def change_tab_callback(self):
         # 重置搜索栏
+        self.date_label.setVisible(False)
+        self.date_week.setVisible(False)
+        self.date_month.setVisible(False)
+        self.search_label.setVisible(False)
         self.right_bar_widget_search_input.setVisible(False)
         self.check_skincare.setVisible(False)
         self.check_daily.setVisible(False)
         self.check_makeup.setVisible(False)
         self.check_food.setVisible(False)
+        self.brand_label.setVisible(False)
+        self.right_bar_widget_brand_text.setVisible(False)
 
         # 隐藏下载按钮
         self.down_btn.setVisible(False)
@@ -467,21 +464,29 @@ class MainUi(QMainWindow, Table):
         # 重置表格数据
         self.table_main.clear()
         self.table_main.setRowCount(0)
-
-        self.activeTab = type
-        if type == '直播红人':
+        print(self.activeTab)
+        if self.activeTab == '直播红人':
+            self.search_label.setVisible(True)
             self.search_label.setText('关键词')
+            self.date_label.setVisible(True)
+            self.date_week.setVisible(True)
+            self.date_month.setVisible(True)
             self.right_bar_widget_search_input.setVisible(True)
-            self.tabpanel_live.setChecked(True)
             self.tableHeader = liveHeader
-        elif type == '品牌旗舰店':
+        elif self.activeTab == '品牌旗舰店':
+            self.search_label.setVisible(True)
             self.search_label.setText('小店分类')
+            self.date_label.setVisible(True)
+            self.date_week.setVisible(True)
+            self.date_month.setVisible(True)
             self.check_skincare.setVisible(True)
             self.check_daily.setVisible(True)
             self.check_makeup.setVisible(True)
             self.check_food.setVisible(True)
-            self.tabpanel_brand.setChecked(True)
             self.tableHeader = brandHeader
+        elif self.activeTab == '品牌转换':
+            self.brand_label.setVisible(True)
+            self.right_bar_widget_brand_text.setVisible(True)
 
         self.table_main.setColumnCount(len(self.tableHeader))
         self.table_main.setHorizontalHeaderLabels(self.tableHeader)
@@ -549,8 +554,8 @@ class MainUi(QMainWindow, Table):
             self.right_process_bar.setValue(0)
 
             # 置灰按钮
-            self.tabpanel_live.setEnabled(False)
-            self.tabpanel_brand.setEnabled(False)
+            self.tabs.tabpanel_feigua_live.setEnabled(False)
+            self.tabs.tabpanel_feigua_brand.setEnabled(False)
             self.search_btn.setEnabled(False)
 
         step = new_step
@@ -576,8 +581,8 @@ class MainUi(QMainWindow, Table):
             self.right_process_bar.setValue(0)
 
             # 恢复按钮
-            self.tabpanel_live.setEnabled(True)
-            self.tabpanel_brand.setEnabled(True)
+            self.tabs.tabpanel_feigua_live.setEnabled(True)
+            self.tabs.tabpanel_feigua_brand.setEnabled(True)
             self.search_btn.setEnabled(True)
 
     # 更新进度条
