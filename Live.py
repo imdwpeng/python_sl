@@ -86,11 +86,15 @@ class Live:
         prev = '//table/tbody/' if page == 1 else '//'
         tr = s.xpath(prev + 'tr')
 
+        # 获取每场直播的产品总数
         if page == 1:
+            print('https://dy.feigua.cn/LiveDetail?' + param)
             detailRes = requests.get('https://dy.feigua.cn/LiveDetail?' + param, headers=self.headers)
             detailS = etree.HTML(detailRes.text)
-            total = detailS.xpath('//*[@id="tab2"]/div/div[3]/div/div[6]/div[1]/span[3]/text()')[0]
-            self.singleRatio = sessionRatio / float(total)
+            hasProduct = len(detailS.xpath('//*[@id="tab2"]'))
+            if hasProduct:
+                total = detailS.xpath('//*[@id="tab2"]/div/div[3]/div/div[6]/div[1]/span[3]/text()')[0]
+                self.singleRatio = sessionRatio / float(total)
 
         hasData = False
         if len(tr):
