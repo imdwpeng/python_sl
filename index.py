@@ -11,20 +11,6 @@ from Live import Live
 from Brand import Brand
 import resource  # 将图标资源打包进exe中
 
-liveHeader = [
-    '主播名',
-    '直播间名称',
-    '开播时间',
-    '店铺名',
-    '商品',
-    '券后价',
-    '上架时间',
-    '下架时间',
-    '上架销量',
-    '下架销量',
-    '销量(预估)',
-    '销售额(预估)'
-]
 brandHeader = [
     '店名',
     '类别',
@@ -43,36 +29,11 @@ checkbox = {
     '美食饮品': '13'
 }
 
-g_cookie = ''
 g_step = 0
 
-
-class Worker(QThread, Live, Brand):
-    signal = pyqtSignal(list, float)
-
-    def __init__(self, list, date, search_type):
-        super().__init__()
-        self.list = list
-        self.date = date
-        self.type = search_type
-        self.cookie = g_cookie
-
-    def run(self):
-        ratio = 100 / float(len(self.list))
-        for i in range(len(self.list)):
-            if self.type == 'live':
-                self.get_search_live(self.list[i], self.date, ratio)
-            elif self.type == 'brand':
-                self.get_search_brand(self.list[i], self.date, ratio)
-
-            self.signal.emit([], ratio * (i + 1))
-
-
-class MainUi(QMainWindow, Table, Tabs):
+class MainUi(QMainWindow, Tabs, Live):
     def __init__(self):
         super().__init__()
-
-        self.tabs = Tabs()
 
         # 绝对路径（针对于打包后相对路径错误）
         self.path = os.path.dirname(os.path.dirname(os.path.realpath(sys.executable)))
@@ -82,7 +43,7 @@ class MainUi(QMainWindow, Table, Tabs):
         self.left_widget = QWidget()  # 创建左侧部件
         self.left_layout = QVBoxLayout()  # 创建左侧部件的纵向布局
         self.right_widget = QWidget()  # 创建右侧部件
-        self.right_layout = QVBoxLayout()  # 创建右侧部件的纵向布局
+        self.right_layout = QGridLayout()  # 创建右侧部件的纵向布局
         self.left_bar_widget = QWidget()  # 创建左侧工具栏
         self.left_bar_layout = QHBoxLayout()  # 创建左侧工具栏的横向布局
         self.left_title_widget = QWidget()  # 创建左侧icon栏
@@ -121,24 +82,21 @@ class MainUi(QMainWindow, Table, Tabs):
         # 显示cookie设置框
         self.left_visit.clicked.connect(self.showCookieDialog)
         
-        # 开始搜索
-        self.search_btn.clicked.connect(self.searchData)
-        # 下载
-        self.down_btn.clicked.connect(self.download)
-        
-        self.initTabs()
-        self.initTable()
+        # 创建tab标签
+        self.tabs = Tabs()
+        self.live = Live()
+
+        self.init_tabs_ui()
+        self.init_live_ui()
         self.init_ui()
 
         # 初始值
-        self.tableHeader = liveHeader
         self.check_skincare.setVisible(False)
         self.check_daily.setVisible(False)
         self.check_makeup.setVisible(False)
         self.check_food.setVisible(False)
-        self.table_main.setColumnCount(len(self.tableHeader))
-        self.table_main.setHorizontalHeaderLabels(self.tableHeader)
         # 先设置cookie
+        self.cookie = ''
         self.showCookieDialog()
 
     def init_ui(self):
@@ -244,7 +202,6 @@ class MainUi(QMainWindow, Table, Tabs):
         self.right_bar_layout.addWidget(self.brand_label, 0, 0, 1, 1)
         self.right_bar_layout.addWidget(self.right_bar_widget_brand_text, 0, 1, 1, 9)
 
-
         # 操作按钮组
         self.right_btn_widget.setLayout(self.right_btn_layout)
         self.search_btn.setObjectName('search')
@@ -263,11 +220,6 @@ class MainUi(QMainWindow, Table, Tabs):
         self.right_process_bar.setValue(0)
         self.right_process_bar.setFixedHeight(20)
         self.right_process_bar.setVisible(False)
-
-        self.right_layout.addWidget(self.right_bar_widget)
-        self.right_layout.addWidget(self.right_btn_widget)
-        self.right_layout.addWidget(self.right_process_bar)
-        self.right_layout.addWidget(self.table_widget, 10)
 
         # 样式
         randomNum = random.randint(1, 6)
@@ -363,17 +315,32 @@ class MainUi(QMainWindow, Table, Tabs):
                 border-top-right-radius:10px;
                 border-bottom-right-radius:10px;
             }
-            QLabel#label{
+            QTabWidget::pane{
+                border:none;
+            }
+            QTabWidget::tab-bar{
+                    alignment:left;
+            }
+            QTabBar::tab{
+                background:transparent;
+            }
+            QTabBar::tab:hover{
+                background:rgb(255, 255, 255, 100);
+            }
+            QTabBar::tab:selected{
+                border-color: white;
+                background:white;
+                color:green;
+            }
+            QLabel{
                 color:#666;
             }
-            QCheckBox#checkbox{
+            QCheckBox{
                 color:#000;
             }
-            QRadioButton#radio{
+            QRadioButton{
                 color:#000;
             }
-       ''')
-        self.right_bar_widget_search_input.setStyleSheet('''
             QLineEdit{
                 color:#000;
                 background:#fff;
@@ -385,18 +352,6 @@ class MainUi(QMainWindow, Table, Tabs):
             QLineEdit:focus{
                 outline:none;
             }
-        ''')
-        self.right_bar_widget_brand_text.setStyleSheet('''
-            QTextEdit{
-                color:#000;
-                background:#fff;
-                border:1px solid gray;
-                width:300px;
-                border-radius:10px;
-                padding:2px 4px;
-            }
-        ''')
-        self.right_btn_widget.setStyleSheet('''
             QPushButton{
                 padding:5px 10px;
                 margin:0 10px;
@@ -405,12 +360,10 @@ class MainUi(QMainWindow, Table, Tabs):
                 border:1px solid #ddd;
                 border-radius:4px;
             }
-            QPushButton#search{
+            QPushButton#btn_search{
                 color:#fff;
                 background:#0170fe;
             }
-        ''')
-        self.right_process_bar.setStyleSheet('''
             QProgressBar{
                 border: 2px solid grey;
                 border-radius: 5px;
@@ -421,7 +374,17 @@ class MainUi(QMainWindow, Table, Tabs):
             QProgressBar::chunk {
                 background-color:qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #0170fe, stop:1 #0000FF);
             }
-        ''')
+       ''')
+       #  self.right_bar_widget_brand_text.setStyleSheet('''
+       #      QTextEdit{
+       #          color:#000;
+       #          background:#fff;
+       #          border:1px solid gray;
+       #          width:300px;
+       #          border-radius:10px;
+       #          padding:2px 4px;
+       #      }
+       #  ''')
 
     # 二次确认关闭窗口
     def showCloseDialog(self):
@@ -434,62 +397,14 @@ class MainUi(QMainWindow, Table, Tabs):
 
     # 显示cookie框
     def showCookieDialog(self):
-        global g_cookie
-        cookie, ok = QInputDialog.getMultiLineText(self, "设置登录信息", "Cookie:", g_cookie)
+        cookie, ok = QInputDialog.getMultiLineText(self, "设置登录信息", "Cookie:", self.cookie)
 
         if ok:
-            g_cookie = cookie
+            self.cookie = cookie
 
     # 切换数据类型
-    def change_tab_callback(self):
-        # 重置搜索栏
-        self.date_label.setVisible(False)
-        self.date_week.setVisible(False)
-        self.date_month.setVisible(False)
-        self.search_label.setVisible(False)
-        self.right_bar_widget_search_input.setVisible(False)
-        self.check_skincare.setVisible(False)
-        self.check_daily.setVisible(False)
-        self.check_makeup.setVisible(False)
-        self.check_food.setVisible(False)
-        self.brand_label.setVisible(False)
-        self.right_bar_widget_brand_text.setVisible(False)
-
-        # 隐藏下载按钮
-        self.down_btn.setVisible(False)
-
-        # 重置进度条
-        self.right_process_bar.setValue(0)
-
-        # 重置表格数据
-        self.table_main.clear()
-        self.table_main.setRowCount(0)
-        print(self.activeTab)
-        if self.activeTab == '直播红人':
-            self.search_label.setVisible(True)
-            self.search_label.setText('关键词')
-            self.date_label.setVisible(True)
-            self.date_week.setVisible(True)
-            self.date_month.setVisible(True)
-            self.right_bar_widget_search_input.setVisible(True)
-            self.tableHeader = liveHeader
-        elif self.activeTab == '品牌旗舰店':
-            self.search_label.setVisible(True)
-            self.search_label.setText('小店分类')
-            self.date_label.setVisible(True)
-            self.date_week.setVisible(True)
-            self.date_month.setVisible(True)
-            self.check_skincare.setVisible(True)
-            self.check_daily.setVisible(True)
-            self.check_makeup.setVisible(True)
-            self.check_food.setVisible(True)
-            self.tableHeader = brandHeader
-        elif self.activeTab == '品牌转换':
-            self.brand_label.setVisible(True)
-            self.right_bar_widget_brand_text.setVisible(True)
-
-        self.table_main.setColumnCount(len(self.tableHeader))
-        self.table_main.setHorizontalHeaderLabels(self.tableHeader)
+    def change_tab_callback(self, index):
+        print(index)
 
     # 爬数据
     def searchData(self):
@@ -518,7 +433,7 @@ class MainUi(QMainWindow, Table, Tabs):
             checkbox_list.append(food)
 
         # 不存在cookie
-        if g_cookie == '':
+        if self.cookie == '':
             return QMessageBox.information(self, '提示', '没有设置登陆信息，请先点击左上角绿色图标设置', QMessageBox.Close)
         # 直播时需要输入关键词
         elif self.activeTab == '直播红人' and keyword == '':
@@ -542,59 +457,6 @@ class MainUi(QMainWindow, Table, Tabs):
             self.thread = Worker(data_list, date, search_type)  # 创建线程
             self.thread.signal.connect(self.update_data)  # 线程连接相关callback事件
             self.thread.start()  # 启动线程
-
-    # 更新数据
-    def update_data(self, info, new_step):
-        global g_step
-        # 初始化数据
-        if g_step < 100 and not self.right_process_bar.isVisible():
-            self.table_main.setRowCount(0)
-            self.down_btn.setVisible(False)
-            self.right_process_bar.setVisible(True)
-            self.right_process_bar.setValue(0)
-
-            # 置灰按钮
-            self.tabs.tabpanel_feigua_live.setEnabled(False)
-            self.tabs.tabpanel_feigua_brand.setEnabled(False)
-            self.search_btn.setEnabled(False)
-
-        step = new_step
-        if len(info):
-            # 新增表格数据
-            self.addRow(info)
-        else:
-            # 没有info时，new_step传的是最终的进度，不是step单元，用于校正进度
-            g_step = new_step
-            step = 0
-
-        # 更新进度条
-        self.set_step(step)
-
-        # 查询完成
-        if g_step >= 100:
-            # 如果有数据的话，显示下载按钮
-            if self.table_main.rowCount():
-                self.down_btn.setVisible(True)
-
-            # 重置进度条
-            self.right_process_bar.setVisible(False)
-            self.right_process_bar.setValue(0)
-
-            # 恢复按钮
-            self.tabs.tabpanel_feigua_live.setEnabled(True)
-            self.tabs.tabpanel_feigua_brand.setEnabled(True)
-            self.search_btn.setEnabled(True)
-
-    # 更新进度条
-    def set_step(self, step):
-        global g_step
-        new_step = g_step + step
-        if int(g_step) < int(new_step):
-            for iStep in range(int(g_step), int(new_step)):
-                g_step += 1
-                self.right_process_bar.setValue(g_step)
-                time.sleep(0.1)
-        g_step = new_step
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
