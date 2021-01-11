@@ -89,6 +89,8 @@ class Live(Table):
         self.live.layout.addWidget(self.live.table_widget, 10)
 
         # 初始值
+        # 日期选择周
+        self.live.date_week.setChecked(True)
         # 隐藏下载按钮
         self.live.btn_download.setVisible(False)
         # 进度条
@@ -100,11 +102,11 @@ class Live(Table):
 
         # 关联事件
         self.live.btn_search.clicked.connect(self.search_live_data)
-        self.live.btn_download.clicked.connect(lambda: self.download(self.live, '直播红人'))
+        self.live.btn_download.clicked.connect(lambda: self.download(self.live, '直播红人', header))
 
     def search_live_data(self):
         # 日期范围
-        date = '7' if self.date_week.isChecked() else '30'
+        date = '7' if self.live.date_week.isChecked() else '30'
         # 直播红人
         keyword = self.live.search_input.text()
 
@@ -118,22 +120,23 @@ class Live(Table):
             return QMessageBox.information(self, '提示', '请输入需要搜索的播主', QMessageBox.Close)
 
         # 开始查询
-        self.thread = WorkerThread(self.get_search_live, self.cookie, keyword_list, date)  # 创建线程
-        self.thread.signal.connect(self.update_live_data)  # 线程连接相关callback事件
-        self.thread.start()  # 启动线程
+        self.live.thread = WorkerThread(self.get_search_live, self.cookie, keyword_list, date)  # 创建线程
+        self.live.thread.signal.connect(self.update_live_data)  # 线程连接相关callback事件
+        self.live.thread.start()  # 启动线程
 
     # 更新数据
     def update_live_data(self, info, new_step):
         global g_step
         # 初始化数据
         if g_step < 100 and not self.live.process_bar.isVisible():
-            self.table_main.setRowCount(0)
+            self.live.table_main.setRowCount(0)
             self.live.btn_download.setVisible(False)
             self.live.process_bar.setVisible(True)
             self.live.process_bar.setValue(0)
 
-            # 置灰开始按钮
+            # 置灰按钮
             self.live.btn_search.setEnabled(False)
+            self.change_tabs_type(False)
 
         step = new_step
         if len(info):
@@ -145,12 +148,12 @@ class Live(Table):
             step = 0
 
         # 更新进度条
-        self.set_step(step)
+        self.set_live_step(step)
 
         # 查询完成
         if g_step >= 100:
             # 如果有数据的话，显示下载按钮
-            if self.table_main.rowCount():
+            if self.live.table_main.rowCount():
                 self.live.btn_download.setVisible(True)
 
             # 重置进度条
@@ -159,9 +162,10 @@ class Live(Table):
 
             # 恢复按钮
             self.live.btn_search.setEnabled(True)
+            self.change_tabs_type(True)
 
     # 更新进度条
-    def set_step(self, step):
+    def set_live_step(self, step):
         global g_step
         new_step = g_step + step
         if int(g_step) < int(new_step):
@@ -291,7 +295,7 @@ class Live(Table):
                         saleCount,
                         saleVolumn
                     ]
-                    self.signal.emit(info, self.singleRatio)
+                    self.live.thread.signal.emit(info, self.singleRatio)
 
                     hasData = True
         return hasData

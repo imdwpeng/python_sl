@@ -36,13 +36,13 @@ class Table():
         parent.table_main.scrollToBottom()
 
     # 导出为excel
-    def download(self, parent, name):
+    def download(self, parent, name, header):
         # 实例化
         wb = Workbook()
         # 获取表
         ws = wb.get_sheet_by_name(wb.get_sheet_names()[0])
         # 添加表头
-        ws.append(parent.tableHeader)
+        ws.append(header)
 
         rowCount = parent.table_main.rowCount()
         columnCount = parent.table_main.columnCount()

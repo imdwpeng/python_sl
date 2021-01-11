@@ -4,14 +4,9 @@ Date: 2021-01-06 09:03:36
 LastEditors: Dong
 LastEditTime: 2021-01-07 23:08:27
 '''
-import sys
-import os
-import time
-import subprocess
 from PyQt5.Qt import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
-from  openpyxl import  *
 
 tabs = [
     {
@@ -113,4 +108,3 @@ class Tabs():
             self.tabs.analysis_brand.setChecked(True)
 
         self.tabs.tab_widget.setCurrentIndex(index)
-        self.change_tab_callback(index)

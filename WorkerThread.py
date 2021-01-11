@@ -1,8 +1,7 @@
 from PyQt5.Qt import *
-from Brand import Brand
 
 
-class WorkerThread(QThread, Brand):
+class WorkerThread(QThread):
     signal = pyqtSignal(list, float)
 
     def __init__(self, search, cookie, list, date):

@@ -32,7 +32,7 @@ class TabBar(QtWidgets.QTabBar):
 
             tabRect = self.tabRect(i)
             tabRect.moveLeft(30)
-            # painter.drawText(tabRect, QtCore.Qt.AlignVCenter | QtCore.Qt.TextDontClip, self.tabText(i))
+            painter.drawText(tabRect, QtCore.Qt.AlignVCenter | QtCore.Qt.TextDontClip, self.tabText(i))
 
 
 class TabWidget(QtWidgets.QTabWidget):
@@ -56,7 +56,7 @@ if __name__ == '__main__':
     import sys
 
     app = QtWidgets.QApplication(sys.argv)
-    QtWidgets.QApplication.setStyle(ProxyStyle())
+    # QtWidgets.QApplication.setStyle(ProxyStyle())
     w = TabWidget()
     w.addTab(QtWidgets.QWidget(),  "ABC")
     w.addTab(QtWidgets.QWidget(), QtGui.QIcon("live.svg"), "ABCDEFGH")

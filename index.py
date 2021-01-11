@@ -1,37 +1,16 @@
 import sys
 import os
-import time
 import random
 from PyQt5.Qt import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
-from TableView import Table
 from Tabs import Tabs
 from Live import Live
 from Brand import Brand
 import resource  # 将图标资源打包进exe中
 
-brandHeader = [
-    '店名',
-    '类别',
-    '链接',
-    '产品1',
-    '销量1',
-    '产品2',
-    '销量2',
-    '产品3',
-    '销量3'
-]
-checkbox = {
-    '护肤': '4',
-    '彩妆': '5',
-    '日用百货': '6',
-    '美食饮品': '13'
-}
 
-g_step = 0
-
-class MainUi(QMainWindow, Tabs, Live):
+class MainUi(QMainWindow, Tabs, Live, Brand):
     def __init__(self):
         super().__init__()
 
@@ -55,24 +34,6 @@ class MainUi(QMainWindow, Tabs, Live):
         self.left_mini = QToolButton()  # 最小化按钮
         self.icon = QLabel()  # icon
         self.title = QLabel("小牛爬虫")  # 标题
-        self.right_bar_widget = QWidget()  # 创建搜索栏
-        self.right_bar_layout = QGridLayout()  # 创建搜索栏的网格布局
-        self.date_label = QLabel('日期范围')  # 日期范围
-        self.date_week = QRadioButton('周')
-        self.date_month = QRadioButton('月')
-        self.search_label = QLabel('关键词')  # 搜索标题
-        self.right_bar_widget_search_input = QLineEdit()  # 搜索框
-        self.brand_label = QLabel('品牌名')  # 品牌名
-        self.right_bar_widget_brand_text = QTextEdit()  # 品牌列表
-        self.check_skincare = QCheckBox('护肤', self)  # 护肤
-        self.check_makeup = QCheckBox('彩妆', self)  # 彩妆
-        self.check_daily = QCheckBox('日用百货', self)  # 日用百货
-        self.check_food = QCheckBox('美食饮品', self)  # 美食饮品
-        self.right_btn_widget = QWidget()  # 创建操作组
-        self.right_btn_layout = QHBoxLayout()  # 创建操作组的横向布局
-        self.search_btn = QPushButton("开始")  # 搜索按钮
-        self.down_btn = QPushButton("下载")  # 下载按钮
-        self.right_process_bar = QProgressBar()  # 进度条
 
         # 绑定事件
         # 关闭窗口
@@ -85,16 +46,13 @@ class MainUi(QMainWindow, Tabs, Live):
         # 创建tab标签
         self.tabs = Tabs()
         self.live = Live()
+        self.brand = Brand()
 
         self.init_tabs_ui()
         self.init_live_ui()
+        self.init_brand_ui()
         self.init_ui()
 
-        # 初始值
-        self.check_skincare.setVisible(False)
-        self.check_daily.setVisible(False)
-        self.check_makeup.setVisible(False)
-        self.check_food.setVisible(False)
         # 先设置cookie
         self.cookie = ''
         self.showCookieDialog()
@@ -159,67 +117,6 @@ class MainUi(QMainWindow, Tabs, Live):
         self.left_layout.addWidget(self.left_title_widget)
         self.left_layout.addWidget(self.left_tab_widget)
         self.left_layout.addStretch(1)
-
-        # 右侧界面
-        # 搜索框
-        self.right_bar_widget.setLayout(self.right_bar_layout)
-
-        # 日期范围
-        self.date_label.setObjectName('label')
-        self.date_week.setObjectName('radio')
-        self.date_month.setObjectName('radio')
-        self.date_week.setChecked(True)
-
-        # 小店分类
-        self.search_label.setObjectName('label')
-        self.check_skincare.setObjectName('checkbox')
-        self.check_makeup.setObjectName('checkbox')
-        self.check_daily.setObjectName('checkbox')
-        self.check_food.setObjectName('checkbox')
-        self.check_skincare.setChecked(True)
-        self.check_makeup.setChecked(True)
-        self.check_daily.setChecked(True)
-        self.check_food.setChecked(True)
-
-        # 关键词搜索
-        self.right_bar_widget_search_input.setPlaceholderText("输入播主，逗号隔开")
-        # 品牌列表
-        self.brand_label.setObjectName('label')
-        self.brand_label.setVisible(False)
-        self.right_bar_widget_brand_text.setVisible(False)
-        self.right_bar_widget_brand_text.setFixedHeight(50)
-        self.right_bar_widget_brand_text.setPlaceholderText("输入品牌名，逗号隔开")
-
-        self.right_bar_layout.addWidget(self.date_label, 0, 0, 1, 1)
-        self.right_bar_layout.addWidget(self.date_week, 0, 1, 1, 1)
-        self.right_bar_layout.addWidget(self.date_month, 0, 2, 1, 1)
-        self.right_bar_layout.addWidget(self.search_label, 1, 0, 1, 1)
-        self.right_bar_layout.addWidget(self.right_bar_widget_search_input, 1, 1, 1, 9)
-        self.right_bar_layout.addWidget(self.check_skincare, 1, 1, 1, 1)
-        self.right_bar_layout.addWidget(self.check_makeup, 1, 2, 1, 1)
-        self.right_bar_layout.addWidget(self.check_daily, 1, 3, 1, 1)
-        self.right_bar_layout.addWidget(self.check_food, 1, 4, 1, 1)
-        self.right_bar_layout.addWidget(self.brand_label, 0, 0, 1, 1)
-        self.right_bar_layout.addWidget(self.right_bar_widget_brand_text, 0, 1, 1, 9)
-
-        # 操作按钮组
-        self.right_btn_widget.setLayout(self.right_btn_layout)
-        self.search_btn.setObjectName('search')
-        self.search_btn.setMinimumWidth(100)
-        self.down_btn.setObjectName("download")
-        self.down_btn.setMinimumWidth(100)
-        self.down_btn.setVisible(False)
-        self.search_btn.setCursor(Qt.PointingHandCursor)
-        self.down_btn.setCursor(Qt.PointingHandCursor)
-        self.right_btn_layout.addStretch(1)
-        self.right_btn_layout.addWidget(self.search_btn)
-        self.right_btn_layout.addWidget(self.down_btn)
-        self.right_btn_layout.addStretch(1)
-
-        # 进度条
-        self.right_process_bar.setValue(0)
-        self.right_process_bar.setFixedHeight(20)
-        self.right_process_bar.setVisible(False)
 
         # 样式
         randomNum = random.randint(1, 6)
@@ -322,7 +219,9 @@ class MainUi(QMainWindow, Tabs, Live):
                     alignment:left;
             }
             QTabBar::tab{
+                width:0;
                 background:transparent;
+                color:transparent;
             }
             QTabBar::tab:hover{
                 background:rgb(255, 255, 255, 100);
@@ -375,25 +274,12 @@ class MainUi(QMainWindow, Tabs, Live):
                 background-color:qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #0170fe, stop:1 #0000FF);
             }
        ''')
-       #  self.right_bar_widget_brand_text.setStyleSheet('''
-       #      QTextEdit{
-       #          color:#000;
-       #          background:#fff;
-       #          border:1px solid gray;
-       #          width:300px;
-       #          border-radius:10px;
-       #          padding:2px 4px;
-       #      }
-       #  ''')
 
     # 二次确认关闭窗口
     def showCloseDialog(self):
         A = QMessageBox.question(self, '提示', '是否确认退出程序？', QMessageBox.Yes | QMessageBox.No)
         if A == QMessageBox.Yes:
-            # 退出进程
-            if self.thread and self.thread.isRunning and self.thread.isRunning():
-                self.thread.quit()
-            self.close()
+            os._exit(0)
 
     # 显示cookie框
     def showCookieDialog(self):
@@ -402,61 +288,10 @@ class MainUi(QMainWindow, Tabs, Live):
         if ok:
             self.cookie = cookie
 
-    # 切换数据类型
-    def change_tab_callback(self, index):
-        print(index)
-
-    # 爬数据
-    def searchData(self):
-        # 日期范围
-        dateList = ['7', '30'] if self.activeTab == '直播红人' else ['week', 'month']
-        date = dateList[0] if self.date_week.isChecked() else dateList[1]
-
-        # 直播红人
-        keyword = self.right_bar_widget_search_input.text()
-        # 品牌旗舰店
-        skincare = checkbox[self.check_skincare.text()] if self.check_skincare.isChecked() else ''
-        makeup = checkbox[self.check_makeup.text()] if self.check_makeup.isChecked() else ''
-        daily = checkbox[self.check_daily.text()] if self.check_daily.isChecked() else ''
-        food = checkbox[self.check_food.text()] if self.check_food.isChecked() else ''
-
-        keyword_list = keyword.split('，') if '，' in keyword else keyword.split(',')
-        checkbox_list = []
-
-        if skincare:
-            checkbox_list.append(skincare)
-        if makeup:
-            checkbox_list.append(makeup)
-        if daily:
-            checkbox_list.append(daily)
-        if food:
-            checkbox_list.append(food)
-
-        # 不存在cookie
-        if self.cookie == '':
-            return QMessageBox.information(self, '提示', '没有设置登陆信息，请先点击左上角绿色图标设置', QMessageBox.Close)
-        # 直播时需要输入关键词
-        elif self.activeTab == '直播红人' and keyword == '':
-            return QMessageBox.information(self, '提示', '请输入需要搜索的播主', QMessageBox.Close)
-        elif self.activeTab == '品牌旗舰店' and len(checkbox_list) == 0:
-            return QMessageBox.information(self, '提示', '请选择小店类型', QMessageBox.Close)
-
-        # 开始查询
-        search_type = ''
-        data_list = []
-        global g_step
-        g_step = 0
-        if self.activeTab == '直播红人' and len(keyword_list):
-            search_type = 'live'
-            data_list = keyword_list
-        elif self.activeTab == '品牌旗舰店' and len(checkbox_list):
-            search_type = 'brand'
-            data_list = checkbox_list
-
-        if search_type:
-            self.thread = Worker(data_list, date, search_type)  # 创建线程
-            self.thread.signal.connect(self.update_data)  # 线程连接相关callback事件
-            self.thread.start()  # 启动线程
+    def change_tabs_type(self, status):
+        self.tabs.feigua_live.setEnabled(status)
+        self.tabs.feigua_brand.setEnabled(status)
+        self.tabs.analysis_brand.setEnabled(status)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
