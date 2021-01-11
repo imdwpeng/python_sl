@@ -27,7 +27,7 @@ class Live:
         self.name = s.xpath('//*[@id="js-qc-blogger-container"]/div[1]/div/div/div[1]/text()')[0].strip() if s.xpath('//*[@id="js-qc-blogger-container"]/div') else ''
         detailUrl = s.xpath('//*[@id="js-qc-blogger-container"]/div[1]/a')
         if self.name and detailUrl:
-            detailUrl = 'https://dy.feigua.cn' + s.xpath('//*[@id="js-qc-blogger-container"]/div[1]/a/@href')[0][1:]
+            detailUrl = 'https://dy.feigua.cn/BloggerNew' + s.xpath('//*[@id="js-qc-blogger-container"]/div[1]/a/@href')[0][9:]
             self.uid = self.get_uid(detailUrl)
             self.get_all_session(totalRatio)
         else:
